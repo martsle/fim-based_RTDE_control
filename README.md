@@ -63,3 +63,11 @@ Provides structured fabrication data, task hierarchies, and geometric informatio
 Streams motion and process commands to the robot controller.
 - __Time Series Database__:
 Stores sensor readings, execution states, and process feedback for monitoring and analysis.
+
+## OpenCascade integration
+
+An alternate fim datahandler is available via [https://github.com/martsle/fim_occ_datahandler](https://github.com/martsle/fim_occ_datahandler).
+In order to use it, the pythonOCC module must be available, see fim_occ_datahandler repository for instructions.
+To make the module available, modify the pyproject.toml file and add "fimocc" to the dependencies, also provide the link to the repository.
+
+Using the alternate datahandler, the FIM graph nodes of geometric entities are directly mapped to OpenCascade objects. This way, the full scope of the OpenCascade toolbox is available during a manufacturing process, enabling in-process modification to the geometric information based on sensor feedback.

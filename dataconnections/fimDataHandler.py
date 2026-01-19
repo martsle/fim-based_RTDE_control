@@ -622,7 +622,7 @@ class Curve(Geometry):
                 dx = par[-1] + (m * (deltaT - rest/2) + self._velocity[1, i-1]) * rest / self.length
             initialT = dt - rest
             
-            wpList.extend(Waypoint.newList(pts, v, self))
+            wpList.extend(Waypoint.newListByCoordArray(coords=pts, normal=None, velocity=v))
         
         return initialT
 
@@ -1030,7 +1030,7 @@ class PathData():
         self._discretizedTransition: List[Waypoint] = []
         
         #self._kinematicSolver = kin
-        #self._transitionIDX = 0
+        self._transitionIDX = 0
         self._rootEvent = None
         self._initialWaypoint: Waypoint = None
         self._currentWaypoint: Waypoint = None
@@ -1114,19 +1114,19 @@ class PathData():
     def removeLayer(self, layer: Layer) -> None:
         self._layers.remove(layer)
 
-    def setConditions(self, layerTime: float = 1.0, maxAcceleration: float = 1.0, maxRobotAcceleration: float = 1.0, maxRobotVelocity: float = 0.1, transitionAcceleration: float = 0.1, scale: float = 1.0, limitLayers: int = 1, frequency: int = 50, **kvargs) -> None:
+    def setConditions(self, layerTime: float = 1.0, A_curvature: float = 1.0, A_fab: float = 1.0, V_travel: float = 0.1, A_travel: float = 0.1, scaleFactor: float = 1.0, N_layers: int = 1, F_rtde: int = 50, **kvargs) -> None:
         self.layerTime = layerTime
-        self.maxAcceleration = maxAcceleration
-        self.maxRobotAcceleration = maxRobotAcceleration
-        self.transitionAcceleration = transitionAcceleration
-        self.maxRobotVelocity = maxRobotVelocity
+        self.maxAcceleration = A_curvature
+        self.maxRobotAcceleration = A_fab
+        self.transitionAcceleration = A_travel
+        self.maxRobotVelocity = V_travel
         #Layer.setLayerTime(layerTime)
         #Layer.setAccelerationLimit(maxAcceleration)
         #Curve._robotAcceleration = maxRobotAcceleration
-        assert scale > 0, "Scale must be greater than 0!"
-        self.scalingFactor = scale
-        self.layerLimit = limitLayers
-        self._frequency = frequency
+        assert scaleFactor > 0, "Scale must be greater than 0!"
+        self.scalingFactor = scaleFactor
+        self.layerLimit = N_layers
+        self._frequency = F_rtde
     
     def setOffset(self, offset: NDArray[np.float64]) -> None:
         self.offsetValue = offset
@@ -1251,7 +1251,7 @@ class PathData():
             self.transitionWidth = wdtSlider.val
 
         # TODO: transition shift needs better solution for components with different layer paths
-        #self._transitionIDX = layer._path.index(selectable[index])
+        self._transitionIDX = layer._path.index(selectable[index])
         self._startCoordinate = selectable[index].evaluate(posSlider.val).reshape((3,1))
         self._startCoordinate[2] = self.offsetValue[2]
         importer.moveStartingElement(self._startCoordinate)
@@ -1313,8 +1313,8 @@ class PathData():
         """
         Generates a linear path between two waypoints.
         """
-        sPt = startWP._cartesian.reshape((3,1))
-        ePt = endWP._cartesian.reshape((3,1))
+        sPt = startWP.cartesian.reshape((3,1))
+        ePt = endWP.cartesian.reshape((3,1))
         path = Line3D(sPt,ePt, TransitionLayer(self))
         path.setInitialVelocity(start=0, end=0)
         # path._velocity[1][1] = path.maxRobotVelocity
@@ -1325,27 +1325,27 @@ class PathData():
         if rest > self.dt/20:
             discretizedPath.append(endWP)
 
-        A = startWP._rot[0:3,2]
-        B = -1*endWP._rot[0:3,2]
+        A = startWP.normal
+        B = -1*endWP.normal
         
         # if np.all(np.abs(A - B) < 1E-4):
         #     return
         
         par = len(discretizedPath) - 1
         
-        refRot = startWP._rot
+        refRot = startWP.rot
         for n, wp in enumerate(discretizedPath):
             normal = A * (1 - n/par) + B * n/par
             normal /= np.linalg.norm(normal)
-            wp.rotByNormalAndReference(normal, refRot)
-            refRot = wp._rot
+            wp.rotByNormalAndReference(refRot, normal)
+            refRot = wp.rot
         
-        return discretizedPath, discretizedPath[-1]._rot
+        return discretizedPath, discretizedPath[-1].rot
         
 
     def addStartTransition(self, initialPose: Waypoint) -> None:
-        XYZrobot = initialPose._cartesian.reshape((3,1))
-        XYZpath = self._layers[0].firstWP._cartesian[0:3].reshape((3,1))
+        XYZrobot = initialPose.cartesian.reshape((3,1))
+        XYZpath = self._layers[0].firstWP.cartesian[0:3].reshape((3,1))
         st = self._startTransition = Line3D(XYZrobot, XYZpath, TransitionLayer())
         st.setInitialVelocity(start=0, end=0)
         rest = st.discretize(self._discretizedTransition, dt=self.dt)
@@ -1353,16 +1353,16 @@ class PathData():
         if rest > self.dt/20:
             self._discretizedTransition.append(Waypoint(st.evaluate(1).reshape((3,)), st))
         
-        A = initialPose._rot[0:3,2]
-        B = -self._layers[0].firstWP.getNormal().reshape(3,)
+        A = initialPose.normal
+        B = -self._layers[0].firstWP.normal.reshape(3,)
         par = len(self._discretizedTransition) - 1
         
-        refRot = initialPose._rot
+        refRot = initialPose.rot
         for n, wp in enumerate(self._discretizedTransition):
             normal = A * (1 - n/par) + B * n/par
             normal /= np.linalg.norm(normal)
             wp.rotByNormalAndReference(normal, refRot)
-            refRot = wp._rot
+            refRot = wp.rot
     
     def drawLayerFrames(self):
         fig, ax = plt.subplots(1,1, subplot_kw=dict(projection='3d'))
@@ -1372,7 +1372,7 @@ class PathData():
         zlim = [100,0]
         for i in range(0, len(self._layers[0]._pathDiscretized), 10):
             wp = self._layers[0]._pathDiscretized[i]
-            origin = wp._cartesian
+            origin = wp.cartesian
             xlim = [min(origin[0], xlim[0]), max(origin[0], xlim[1])]
             ylim = [min(origin[1], ylim[0]), max(origin[1], ylim[1])]
             zlim = [min(origin[2], zlim[0]), max(origin[2], zlim[1])]
@@ -1402,18 +1402,18 @@ class PathData():
         
         for i in range(0, len(self._discretizedTransition), int(np.floor(len(self._discretizedTransition)/10))):
             wp = self._discretizedTransition[i]
-            origin = wp._cartesian
+            origin = wp.cartesian
             ax.scatter(*origin.tolist(), c='k')
-            x = origin + 0.02 * wp._rot[0:3,0]
-            y = origin + 0.02 * wp._rot[0:3,1]
-            z = origin + 0.02 * wp._rot[0:3,2]
+            x = origin + 0.02 * wp.rot[0:3,0]
+            y = origin + 0.02 * wp.rot[0:3,1]
+            z = origin + 0.02 * wp.rot[0:3,2]
 
             ax.plot([origin[0], x[0]], [origin[1], x[1]], [origin[2], x[2]], c='r')
             ax.plot([origin[0], y[0]], [origin[1], y[1]], [origin[2], y[2]], c='g')
             ax.plot([origin[0], z[0]], [origin[1], z[1]], [origin[2], z[2]], c='b')
 
-        first = self._discretizedTransition[0]._cartesian
-        last  = self._discretizedTransition[-1]._cartesian
+        first = self._discretizedTransition[0].cartesian
+        last  = self._discretizedTransition[-1].cartesian
         mid = (first + last) / 2
         max_range = np.array([abs(first[0]-last[0]), abs(first[1]-last[1]), abs(first[2]-last[2])]).max()
         Xb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][0].flatten() + mid[0]
@@ -1489,9 +1489,9 @@ class PathData():
     def wpPlot(wpList, ax: plt.Axes):
         x, y, z = [], [], []
         for wp in wpList:
-            x.append(wp._cartesian[0])
-            y.append(wp._cartesian[1])
-            z.append(wp._cartesian[2])
+            x.append(wp.cartesian[0])
+            y.append(wp.cartesian[1])
+            z.append(wp.cartesian[2])
         ax.plot(x, y, z, marker='o')
 
 class Process():
@@ -1500,6 +1500,7 @@ class Process():
         self.Name = ifcEntity.get('Name')
         self._associatedEntity = associatedEntity
         self.hasSubprocess = hasSubprocess
+        self._actions = []
 
     @property
     def elementId(self):
@@ -1517,7 +1518,6 @@ class Process():
 class Task(Process):
     def __init__(self, ifcEntity: Node, associatedEntity: Node, hasSubprocess:bool = False) -> None:
         super().__init__(ifcEntity, associatedEntity, hasSubprocess)
-        self._actions = []
 
     @property
     def workMethod(self):
@@ -1536,7 +1536,7 @@ class Task(Process):
             else:
                 raise Exception('associatedEntity not recognized!')
             frame['origin'] = (np.array(frame['origin']).reshape((3,1)) * importer.scalingFactor + importer.offsetValue).reshape((3,)).tolist()
-            p1 = Waypoint.byFrame(frame, importer._kinematicSolver)
+            p1 = Waypoint(coord=frame['origin'])
             path, importer._baseRot = importer._pathData.generateLIN(p0, p1)
             payload = []
             previous = p0._jointangles
@@ -1596,6 +1596,10 @@ class KeepAlive(Action):
 
 class UseSensor(Action):
     pass
+
+class EndProcess(Action):
+    def __init__(self) -> None:
+        super().__init__(None, None)
 
 class FIMimporter():
     def __init__(self, fimAccess: dict) -> None:
@@ -1693,7 +1697,7 @@ class FIMimporter():
     def moveStartingElement(self, newOrigin: NDArray[np.float64]):
         pass
         
-    def extractTasks(self, tasks: 'Queue'):
+    def extractTasks(self, actions: 'Queue'):
         self.startSession()
         nol = 0
         while True:
@@ -1702,13 +1706,17 @@ class FIMimporter():
                 print("Done!")
                 self.closeSession()
                 return
-            if task._associatedEntity and task.Name == 'Print' and 'IfcFabricationLayer' in task._associatedEntity.labels:
+            if task._associatedEntity and task.Name == 'Extrude' and 'IfcFabricationLayer' in task._associatedEntity.labels:
                 nol += 1
 
             if nol > self._pathData.layerLimit and not task.Name == 'End':
                 continue
             task.unpackAssociatedEntity(self)
-            tasks.put(task)
+            if task._actions:
+                actions.put(task._actions)
+            elif task.Name == 'End':
+                actions.put([EndProcess()])
+                break
 
 
     def readNextTask(self) -> 'Task':

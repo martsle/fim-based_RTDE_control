@@ -69,6 +69,7 @@ def mainfunc():
         'W_filament'       : 0.008,  # [m] targed width of extruded filament in meters
         'scaleFactor'      : 0.2,    # [-] Scale factor for the entire model
         'calibrationFactor': 3.0,    # Calibration factor for extrusion
+        'layerTime'        : 10.0,   # [s] target time per layer
     }
     #endregion 
 
@@ -115,9 +116,10 @@ def mainfunc():
     if   IMPORTER_TYPE is Importer.Graph:
         fimConnection = GraphImporter(dbaccess["fimgraph"])
     elif IMPORTER_TYPE is Importer.GraphOCC:
+        # from fimocc import FIMgraphConnection
         # fimConnection = FIMgraphConnection(dbaccess["fimgraph"])
         # fimConnection.setGeometyPrecision(1E-5)
-        raise NotImplementedError("FIMgraphConnection is not imported properly.")
+        raise NotImplementedError("FIMgraphConnection needs to be imported separately, see readme.")
     elif IMPORTER_TYPE is Importer.File:
         fimConnection = FileImporter({"uri": fd.askopenfilename(initialdir=dbaccess['fimfile'], title="Select IFC file", filetypes=[("IFC files", "*.ifc")])})
         if not fimConnection.ifcfile["uri"]:
