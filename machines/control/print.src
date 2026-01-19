@@ -1,0 +1,25 @@
+&ACCESS RVP
+&REL 1
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+&PARAM EDITMASK = *
+
+DEF PRINT()
+  VAR
+    $ROBO_Command[7] REAL
+    $RUNNING INT := 0
+    $START_Command INT := 0
+  ENDVAR
+
+  $RUNNING := 1  ; Setze $RUNNING auf 1
+
+  WHILE $START_Command <> 1 DO
+    WAIT 0.1 ; Warte 0.1 Sekunden, bevor du erneut überprüfst
+  ENDWHILE
+
+  WHILE TRUE DO
+    ; Extrahiere Zielkoordinaten und Geschwindigkeit aus $ROBO_Command
+    LIN {X $ROBO_Command[1], Y $ROBO_Command[2], Z $ROBO_Command[3], 
+         A $ROBO_Command[4], B $ROBO_Command[5], C $ROBO_Command[6]} 
+         C_VEL $ROBO_Command[7]
+  ENDWHILE
+END

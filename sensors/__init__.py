@@ -1,0 +1,1 @@
+from .cameras.zedMini import ZED

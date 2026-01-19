@@ -1,0 +1,21 @@
+ROBOT_HOST=1.1.1.1 # IP Address of the robot
+ROBOT_PORT=30004 # Port of the robot
+
+EXTRUDER_HOST=1.1.1.1 # IP Address for the extruder communication
+EXTRUDER_PORT=1883 # Port for the extruder
+EXTRUDER_USER=<user value> # Username for the extruder communication
+EXTRUDER_PASS=<user value> # Password for the extruder communication
+
+NEO4J_URI=neo4j://localhost:7687 # URI for the local Neo4j database
+NEO4J_USER=neo4j # Username for the Neo4j database
+NEO4J_TOKEN=<user value> # Token for the Neo4j database
+NEO4J_AUTH=${NEO4J_USER} ${NEO4J_TOKEN} # Authentication for the Neo4j database
+
+INFLUX_HOST=http://1.1.1.1:8086 # Host address for the InfluxDB
+INFLUX_TOKEN=<user value> # Token for the InfluxDB
+INFLUX_ORG=<user value> # Organization for the InfluxDB
+INFLUX_DATABASE=<user value> # Database for the InfluxDB
+
+FTP_HOST=1.1.1.1
+FTP_USER=<user value>  # Use 'anonymous' if enabled
+FTP_PASS=<user value>  # Leave empty for anonymous

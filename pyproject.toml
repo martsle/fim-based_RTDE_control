@@ -1,0 +1,23 @@
+[project]
+name = "rtde-robot-control"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dotenv>=0.9.9",
+    "ifcopenshell>=0.8.2",
+    "influxdb3-python>=0.13.0",
+    "matplotlib>=3.10.3",
+    "neo4j>=5.28.1",
+    "numpy>=2.2.6",
+    "pyserial>=3.5",
+    "pyModbusTCP",
+    "paho.mqtt",
+    "fimkin",
+    "urrtde",
+]
+
+[tool.uv.sources]
+fimkin = { git = "https://github.com/martsle/fim_kinematics.git", branch = "main" }
+urrtde = { git = "https://github.com/UniversalRobots/RTDE_Python_Client_Library.git", branch = "main" }

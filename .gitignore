@@ -1,0 +1,11 @@
+*/*.pyc
+*.pyc
+2008_Book_SpringerHandbookOfRobotics.pdf
+#runs/*
+__pycache__/
+.vscode/
+robot/cpp_kinematics/build/*
+.conda/
+runs/*
+.env
+uv.lock
