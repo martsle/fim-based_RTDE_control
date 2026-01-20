@@ -1,0 +1,35 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: fim-based RTDE control
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Martin
+    family-names: Slepicka
+    email: martin.slepicka@tum.de
+    orcid: 'https://orcid.org/0000-0003-3475-3855'
+  - given-names: André
+    family-names: Borrmann
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.18312736
+repository-code: 'https://github.com/martsle/fim-based_RTDE_control.git'
+abstract: >-
+  fim-based RTDE control is a robot control tool that uses a
+  Fabrication Information Modeling (FIM) model as its
+  information backbone. It orchestrates additive
+  manufacturing processes by linking digital fabrication
+  data with real-time robot control and data feedback.
+keywords:
+  - FIM
+  - Additive Manufacturing
+  - Robot Control
+  - BIM
+license: GPL-3.0
+commit: 74fce31
+version: 0.1.1
+date-released: '2026-01-20'
